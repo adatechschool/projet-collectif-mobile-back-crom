@@ -15,7 +15,7 @@ var db *sql.DB
 var err error
 
 func main() {
-	db, err = sql.Open("mysql", "root:adatechschool8@tcp(127.0.0.1:3306)/cromdb")
+	db ,err = sql.Open("mysql", "root:@/cromdb")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -31,14 +31,14 @@ func main() {
 func getSpots(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var spots []models.Spot
-	result, err := db.Query("SELECT * FROM cromdb.spots")
+	result, err := db.Query("SELECT * FROM spots")
 	if err != nil {
 		panic(err.Error())
 	}
 	defer result.Close()
 	for result.Next() {
 		var spot models.Spot
-		err := result.Scan(&spot.id, &spot.destination, &spot.photoURL, &spot.address, &spot.favorites)
+		err := result.Scan(&spot.ID, &spot.Destination, &spot.PhotoURL, &spot.Address, &spot.Favorites)
 		if err != nil {
 			panic(err.Error())
 		}
