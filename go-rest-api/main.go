@@ -1,40 +1,30 @@
 package main
 
 import (
-    "encoding/json"
-    "fmt"
-    "log"
-    "net/http"
-    "github.com/gorilla/mux"
-    "go-rest-api/main/models"
+	"encoding/json"
+	"fmt"
+	"go-rest-api/main/models"
+	"log"
+	"net/http"
+
+	"github.com/gorilla/mux"
 )
+
 func homeLink(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, "Welcome home!")
+	fmt.Fprintf(w, "Welcome home!")
 }
 func main() {
-    router := mux.NewRouter().StrictSlash(true)
-    router.HandleFunc("/", homeLink)
-    // router.HandleFunc("/event", createEvent).Methods("POST")
-    router.HandleFunc("/spots", getAllSpots).Methods("GET")
-    router.HandleFunc("/partialspots", getPartialSpots).Methods("GET") // Nouvelle route
-    // router.HandleFunc("/events/{id}", getOneEvent).Methods("GET")
-    log.Fatal(http.ListenAndServe(":8080", router))
+	router := mux.NewRouter().StrictSlash(true)
+	router.HandleFunc("/", homeLink)
+	// router.HandleFunc("/event", createEvent).Methods("POST")
+	router.HandleFunc("/spots", getAllSpots).Methods("GET")
+	router.HandleFunc("/partialspots", getPartialSpots).Methods("GET") // Nouvelle route
+	// router.HandleFunc("/events/{id}", getOneEvent).Methods("GET")
+	log.Fatal(http.ListenAndServe(":8080", router))
 }
 
-
-// func createEvent(w http.ResponseWriter, r *http.Request) {
-//  var newEvent event
-//  reqBody, err := ioutil.ReadAll(r.Body)
-//  if err != nil {
-//      fmt.Fprintf(w, "Kindly enter data with the event title and description only in order to update")
-//  }
-//  json.Unmarshal(reqBody, &newEvent)
-//  events = append(events, newEvent)
-//  w.WriteHeader(http.StatusCreated)
-//  json.NewEncoder(w).Encode(newEvent)
-// }
 func getAllSpots(w http.ResponseWriter, r *http.Request) {
-    myJsonString := `{
+	myJsonString := `{
         "records": [
             {
                 "id": "rec5aF9TjMjBicXCK",
@@ -180,13 +170,13 @@ func getAllSpots(w http.ResponseWriter, r *http.Request) {
         "offset": "recH2ennHFNOtB1Wt"
     }
     `
-    var spots models.PartialSpotList
-    json.Unmarshal([]byte(myJsonString), &spots)
-    json.NewEncoder(w).Encode(spots)
+	var spots models.CompleteSpotList
+	json.Unmarshal([]byte(myJsonString), &spots)
+	json.NewEncoder(w).Encode(spots)
 }
 
 func getPartialSpots(w http.ResponseWriter, r *http.Request) {
-    myJsonString := `{
+	myJsonString := `{
         "records": [
             {
                 "id": "rec5aF9TjMjBicXCK",
@@ -341,18 +331,18 @@ func getPartialSpots(w http.ResponseWriter, r *http.Request) {
 	partialSpotList.Records = make([]models.PartialRecord, len(completeSpotList.Records))
 
 	// Remplit la nouvelle structure avec des informations réduites
-    for i, completeSpot := range completeSpotList.Records {
-        partialSpotList.Records[i].Destination = completeSpot.Fields.Destination
+	for i, completeSpot := range completeSpotList.Records {
+		partialSpotList.Records[i].Destination = completeSpot.Fields.Destination
 
-        // Vérifie si la liste des photos n'est pas vide
-        if len(completeSpot.Fields.Photos) > 0 {
-            // Remplit le champ PhotoURL de PartialRecord avec l'URL de la première photo
-            partialSpotList.Records[i].PhotoURL = completeSpot.Fields.Photos[0].URL
-        }
+		// Vérifie si la liste des photos n'est pas vide
+		if len(completeSpot.Fields.Photos) > 0 {
+			// Remplit le champ PhotoURL de PartialRecord avec l'URL de la première photo
+			partialSpotList.Records[i].PhotoURL = completeSpot.Fields.Photos[0].URL
+		}
 
-        partialSpotList.Records[i].Address = completeSpot.Fields.Address
-        // Ajoutez d'autres champs que vous souhaitez inclure
-    }
+		partialSpotList.Records[i].Address = completeSpot.Fields.Address
+		// Ajoutez d'autres champs que vous souhaitez inclure
+	}
 
 	// Encode la nouvelle structure en JSON et renvoie la réponse
 	w.Header().Set("Content-Type", "application/json")
