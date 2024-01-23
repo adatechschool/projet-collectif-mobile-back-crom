@@ -6,26 +6,62 @@ import (
 	"go-rest-api/main/models"
 	"log"
 	"net/http"
-
+	"github.com/joho/godotenv"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"fmt"
+	"os"
 )
 
 var db *sql.DB
 var err error
 
 func main() {
-	db ,err = sql.Open("mysql", "root:@/cromdb")
+	// Load the .env file
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	// Establish the database connection
+	db, err = connectDB()
 	if err != nil {
 		panic(err.Error())
 	}
 	defer db.Close()
+
+	// Set up and start the HTTP server
 	router := mux.NewRouter().StrictSlash(true)
-	// router.HandleFunc("/event", createEvent).Methods("POST")
 	router.HandleFunc("/spots", getSpots).Methods("GET")
-	router.HandleFunc("/partialspots", getPartialSpots).Methods("GET") // Nouvelle route
-	// router.HandleFunc("/events/{id}", getOneEvent).Methods("GET")
+	router.HandleFunc("/partialspots", getPartialSpots).Methods("GET")
 	log.Fatal(http.ListenAndServe(":8080", router))
+}
+
+func connectDB() (*sql.DB, error) {
+	// Get database connection details from environment variables
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+
+	// Create the database connection string
+	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbHost, dbPort, dbName)
+
+	// Open the database connection
+	db, err := sql.Open("mysql", dataSourceName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to the database: %v", err)
+	}
+
+	// Check if the connection is valid
+	err = db.Ping()
+	if err != nil {
+		db.Close()
+		return nil, fmt.Errorf("failed to ping the database: %v", err)
+	}
+
+	fmt.Println("Connected to the database")
+	return db, nil
 }
 
 func getSpots(w http.ResponseWriter, r *http.Request) {
