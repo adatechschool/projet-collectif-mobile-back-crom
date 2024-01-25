@@ -31,8 +31,8 @@ func main() {
 
 	// Set up and start the HTTP server
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/api/spots", getSpots).Methods("GET")
-    router.HandleFunc("/api/spots", putFavorites).Methods("PUT")
+	router.HandleFunc("/spots", getSpots).Methods("GET")
+    router.HandleFunc("/spot/{id}", putFavorites).Methods("PUT")
 	// router.HandleFunc("/partialspots", getPartialSpots).Methods("GET")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
@@ -86,10 +86,11 @@ func getSpots(w http.ResponseWriter, r *http.Request) {
 
 
 func putFavorites(w http.ResponseWriter, r *http.Request) {
-    spotID := mux.Vars(r)["id"]
+    vars := mux.Vars(r)
+	id := vars["id"]
 
     // Exécutez une requête SELECT pour obtenir la valeur actuelle de "favorites" pour le spot avec l'ID spécifié.
-    row := db.QueryRow("SELECT favorites FROM spot WHERE id = ?", spotID)
+    row := db.QueryRow("SELECT favorites FROM spots WHERE id = ?", id)
 
     var currentFavorites bool
     err := row.Scan(&currentFavorites)
@@ -103,7 +104,7 @@ func putFavorites(w http.ResponseWriter, r *http.Request) {
     newFavorites := !currentFavorites
 
     // Exécutez une requête UPDATE pour mettre à jour la valeur de "favorites" pour le spot avec la nouvelle valeur calculée.
-    _, err = db.Exec("UPDATE spot SET favorites = ? WHERE id = ?", newFavorites, spotID)
+    _, err = db.Exec("UPDATE spots SET favorites = ? WHERE id = ?", newFavorites, id)
     if err != nil {
         log.Fatal(err)
         http.Error(w, "Erreur lors de la mise à jour des favoris du spot", http.StatusInternalServerError)
