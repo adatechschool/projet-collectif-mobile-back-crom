@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"fmt"
 	"os"
+    "github.com/matoous/go-nanoid/v2"
 )
 
 var db *sql.DB
@@ -32,7 +33,9 @@ func main() {
 	// Set up and start the HTTP server
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/spots", getSpots).Methods("GET")
-	router.HandleFunc("/partialspots", getPartialSpots).Methods("GET")
+	//router.HandleFunc("/partialspots", getPartialSpots).Methods("GET")
+    router.HandleFunc("/spot", addSpot).Methods("POST")
+    router.HandleFunc("/favorites", getFavoritesSpots).Methods("GET")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
 
@@ -81,6 +84,46 @@ func getSpots(w http.ResponseWriter, r *http.Request) {
 		spots = append(spots, spot)
 	}
 	json.NewEncoder(w).Encode(spots)
+}
+
+func getFavoritesSpots(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var spots []models.Spot
+	result, err := db.Query("SELECT * FROM spots WHERE favorites = 1")
+	if err != nil {
+		panic(err.Error())
+	}
+	defer result.Close()
+	for result.Next() {
+		var spot models.Spot
+		err := result.Scan(&spot.ID, &spot.Destination, &spot.PhotoURL, &spot.Address, &spot.Favorites)
+		if err != nil {
+			panic(err.Error())
+		}
+		spots = append(spots, spot)
+	}
+	json.NewEncoder(w).Encode(spots)
+}
+
+func addSpot(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+    var id = generateId()
+    var spot models.Spot
+    _ = json.NewDecoder(r.Body).Decode(&spot)
+    insert, err := db.Query("INSERT INTO spots VALUES (?, ?, ?, ?, ?)", id, spot.Destination, spot.PhotoURL, spot.Address, spot.Favorites)
+    if err != nil {
+        panic(err.Error())
+    }
+    defer insert.Close()
+    json.NewEncoder(w).Encode("Spot added successfully")
+}
+
+func generateId() string {
+    id, err := gonanoid.New()
+    if err != nil {
+		panic(err.Error())
+	}
+    return id
 }
 
 func getPartialSpots(w http.ResponseWriter, r *http.Request) {
